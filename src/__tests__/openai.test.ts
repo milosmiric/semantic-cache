@@ -1,51 +1,76 @@
 /**
- * Unit tests for OpenAILLM.
+ * Unit tests for VercelAILLM.
  *
- * Tests the OpenAI LLM provider interface and structured output support.
+ * Tests the Vercel AI SDK LLM provider interface.
  * Uses interface verification since actual API calls require valid keys.
  */
 
 import { describe, test, expect } from "bun:test";
-import { OpenAILLM } from "../lib/llm/openai";
+import { VercelAILLM } from "../lib/llm/vercel-ai";
 
-describe("OpenAILLM", () => {
+// Mock LanguageModel for testing
+const mockLanguageModel = {
+  modelId: "mock-model-id",
+  provider: "mock-provider",
+  specificationVersion: "v1",
+  defaultObjectGenerationMode: "json" as const,
+  doGenerate: async () => ({
+    text: "mock response",
+    finishReason: "stop" as const,
+    usage: { promptTokens: 10, completionTokens: 20 },
+    rawCall: { rawPrompt: null, rawSettings: {} },
+  }),
+  doStream: async () => ({
+    stream: new ReadableStream(),
+    rawCall: { rawPrompt: null, rawSettings: {} },
+  }),
+};
+
+describe("VercelAILLM", () => {
   describe("constructor", () => {
-    test("should create instance with default model", () => {
-      const llm = new OpenAILLM("test-api-key");
-      expect(llm.getModel()).toBe("gpt-5-mini");
-    });
-
-    test("should create instance with custom model", () => {
-      const llm = new OpenAILLM("test-api-key", "gpt-5-mini");
-      expect(llm.getModel()).toBe("gpt-5-mini");
+    test("should create instance with a LanguageModel", () => {
+      const llm = new VercelAILLM(mockLanguageModel as any);
+      expect(llm).toBeInstanceOf(VercelAILLM);
     });
   });
 
   describe("getModel", () => {
-    test("should return the configured model", () => {
-      const llm = new OpenAILLM("test-key", "gpt-5-nano");
-      expect(llm.getModel()).toBe("gpt-5-nano");
+    test("should return the model ID from the LanguageModel", () => {
+      const llm = new VercelAILLM(mockLanguageModel as any);
+      expect(llm.getModel()).toBe("mock-model-id");
     });
   });
 
-  describe("complete (interface)", () => {
+  describe("interface compliance", () => {
     test("should have complete method", () => {
-      const llm = new OpenAILLM("test-key");
+      const llm = new VercelAILLM(mockLanguageModel as any);
       expect(typeof llm.complete).toBe("function");
     });
-  });
 
-  describe("completeStructured (interface)", () => {
     test("should have completeStructured method", () => {
-      const llm = new OpenAILLM("test-key");
+      const llm = new VercelAILLM(mockLanguageModel as any);
       expect(typeof llm.completeStructured).toBe("function");
+    });
+
+    test("should have completeWithTiming method", () => {
+      const llm = new VercelAILLM(mockLanguageModel as any);
+      expect(typeof llm.completeWithTiming).toBe("function");
+    });
+
+    test("should have getModel method", () => {
+      const llm = new VercelAILLM(mockLanguageModel as any);
+      expect(typeof llm.getModel).toBe("function");
     });
   });
 
-  describe("completeWithTiming (interface)", () => {
-    test("should have completeWithTiming method", () => {
-      const llm = new OpenAILLM("test-key");
-      expect(typeof llm.completeWithTiming).toBe("function");
+  describe("LLMProvider interface", () => {
+    test("should implement all required LLMProvider methods", () => {
+      const llm = new VercelAILLM(mockLanguageModel as any);
+
+      // Check all required methods exist
+      expect(llm.complete).toBeDefined();
+      expect(llm.completeStructured).toBeDefined();
+      expect(llm.getModel).toBeDefined();
     });
   });
 });

@@ -1,6 +1,6 @@
 # Semantic Cache
 
-A demonstration of semantic caching for LLM queries using MongoDB Atlas Vector Search, VoyageAI embeddings, and OpenAI.
+A demonstration of semantic caching for LLM queries using MongoDB Atlas Vector Search, VoyageAI embeddings, and Vercel AI SDK (supporting OpenAI, Anthropic, Google, and more).
 
 ## Overview
 
@@ -31,8 +31,8 @@ Semantic caching improves LLM application performance by caching responses based
                     │                   │
                     ▼                   ▼
            Return cached         ┌─────────────┐
-             response            │   OpenAI    │
-                                 │     LLM     │
+             response            │  LLM (via   │
+                                 │ Vercel AI)  │
                                  └─────────────┘
                                         │
                                         ▼
@@ -152,7 +152,7 @@ import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
 // Load configuration from environment
 const config = loadConfigFromEnv();
 
-// Create cache instance
+// Create cache instance (uses OpenAI by default)
 const cache = SemanticCache.fromConfig(config);
 
 // Query with automatic caching
@@ -171,6 +171,41 @@ console.log(result2.similarityScore);  // 0.94
 // Clean up
 await cache.close();
 ```
+
+### Using Different LLM Providers
+
+Switch to any LLM provider supported by Vercel AI SDK:
+
+```typescript
+import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
+import { openai } from "@ai-sdk/openai";       // bun add @ai-sdk/openai
+import { anthropic } from "@ai-sdk/anthropic"; // bun add @ai-sdk/anthropic
+import { google } from "@ai-sdk/google";       // bun add @ai-sdk/google
+
+const config = loadConfigFromEnv();
+
+// Use OpenAI GPT-5
+const openaiCache = SemanticCache.fromConfig(config, openai("gpt-5-mini"));
+
+// Use Anthropic Claude
+const claudeCache = SemanticCache.fromConfig(config, anthropic("claude-sonnet-4-20250514"));
+
+// Use Google Gemini
+const geminiCache = SemanticCache.fromConfig(config, google("gemini-2.0-flash"));
+
+// All caches work the same way
+const result = await claudeCache.query("Explain quantum computing");
+```
+
+Available providers (install separately):
+| Provider | Package | Example Model |
+|----------|---------|---------------|
+| OpenAI | `@ai-sdk/openai` | `openai("gpt-5-mini")` |
+| Anthropic | `@ai-sdk/anthropic` | `anthropic("claude-sonnet-4-20250514")` |
+| Google | `@ai-sdk/google` | `google("gemini-2.0-flash")` |
+| Mistral | `@ai-sdk/mistral` | `mistral("mistral-large-latest")` |
+| AWS Bedrock | `@ai-sdk/amazon-bedrock` | Various models |
+| Azure | `@ai-sdk/azure` | Azure-hosted models |
 
 ### Structured Output with Zod
 
@@ -215,9 +250,10 @@ For more control, you can use the individual components:
 import {
   VoyageEmbeddings,
   MongoDBVectorStore,
-  OpenAILLM,
+  VercelAILLM,
   SemanticCache
 } from "@milosmiric/semantic-cache";
+import { anthropic } from "@ai-sdk/anthropic";
 
 // Create custom embeddings instance
 const embeddings = new VoyageEmbeddings(VOYAGE_API_KEY, "voyage-3");
@@ -232,52 +268,24 @@ const storage = new MongoDBVectorStore({
   embeddingDimension: 1024,
 });
 
-// Create LLM provider (OpenAILLM implements LLMProvider interface)
-const llm = new OpenAILLM(OPENAI_API_KEY, "gpt-5-mini");
+// Create LLM provider with any Vercel AI SDK model
+const llm = new VercelAILLM(anthropic("claude-sonnet-4-20250514"));
 
-// Assemble cache - accepts any LLMProvider implementation
+// Assemble cache
 const cache = new SemanticCache(embeddings, storage, llm, 0.85);
 ```
 
-### Custom LLM Provider
-
-The `SemanticCache` accepts any implementation of the `LLMProvider` interface, allowing you to use different LLM backends:
-
-```typescript
-import type { LLMProvider } from "@milosmiric/semantic-cache";
-import { z } from "zod";
-
-// Implement custom LLM provider
-class AnthropicLLM implements LLMProvider {
-  constructor(private apiKey: string, private model: string) {}
-
-  async complete(prompt: string): Promise<string> {
-    // Your implementation here
-    const response = await callAnthropicAPI(this.apiKey, this.model, prompt);
-    return response.content;
-  }
-
-  async completeStructured<T extends z.ZodType>(
-    prompt: string,
-    schema: T
-  ): Promise<z.infer<T>> {
-    // Your structured output implementation
-    const response = await this.complete(prompt);
-    return schema.parse(JSON.parse(response));
-  }
-
-  getModel(): string {
-    return this.model;
-  }
-}
-
-// Use custom provider with SemanticCache
-const customLLM = new AnthropicLLM(ANTHROPIC_API_KEY, "claude-3-sonnet");
-const cache = new SemanticCache(embeddings, storage, customLLM, 0.85);
-```
+Available Vercel AI SDK providers (install separately):
+- `@ai-sdk/openai` - OpenAI (GPT-4, GPT-5)
+- `@ai-sdk/anthropic` - Anthropic (Claude)
+- `@ai-sdk/google` - Google (Gemini)
+- `@ai-sdk/mistral` - Mistral
+- `@ai-sdk/amazon-bedrock` - AWS Bedrock
+- `@ai-sdk/azure` - Azure OpenAI
 
 This abstraction enables:
 - Switching between LLM providers without changing cache logic
+- Using your existing API keys (no new accounts needed)
 - Testing with mock LLM implementations
 - Supporting multiple LLM backends in the same application
 
@@ -293,7 +301,7 @@ src/
 │   ├── storage/
 │   │   └── mongodb.ts           # MongoDB Atlas Vector Store
 │   ├── llm/
-│   │   └── openai.ts            # OpenAI LLM wrapper
+│   │   └── vercel-ai.ts         # Vercel AI SDK LLM adapter
 │   ├── config.ts                # Configuration management
 │   ├── types.ts                 # TypeScript type definitions
 │   └── index.ts                 # Library exports

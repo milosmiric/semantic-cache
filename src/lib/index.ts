@@ -5,10 +5,10 @@
  * - MongoDB Atlas for vector storage
  * - Atlas Vector Search for similarity matching
  * - VoyageAI for vector embeddings
- * - OpenAI for LLM completions
+ * - Vercel AI SDK for LLM completions (supports OpenAI, Anthropic, Google, and more)
  * - Zod for structured output schemas
  *
- * @example String response (default)
+ * @example Basic usage with default OpenAI
  * ```typescript
  * import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
  *
@@ -23,6 +23,21 @@
  * console.log(result2.fromCache); // true (semantic match!)
  *
  * await cache.close();
+ * ```
+ *
+ * @example Using different LLM providers
+ * ```typescript
+ * import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
+ * import { anthropic } from "@ai-sdk/anthropic";
+ * import { google } from "@ai-sdk/google";
+ *
+ * const config = loadConfigFromEnv();
+ *
+ * // Use Claude
+ * const claudeCache = SemanticCache.fromConfig(config, anthropic("claude-sonnet-4-20250514"));
+ *
+ * // Use Gemini
+ * const geminiCache = SemanticCache.fromConfig(config, google("gemini-2.0-flash"));
  * ```
  *
  * @example Structured output with Zod
@@ -60,7 +75,7 @@ export { loadConfigFromEnv, validateConfig } from "./config";
 // Component implementations (for advanced usage and customization)
 export { VoyageEmbeddings, VOYAGE_MODELS, type VoyageModel } from "./embeddings/voyage";
 export { MongoDBVectorStore, type MongoDBVectorStoreConfig } from "./storage/mongodb";
-export { OpenAILLM } from "./llm/openai";
+export { VercelAILLM } from "./llm/vercel-ai";
 
 // Type definitions
 export type {

@@ -35,9 +35,10 @@ import type {
   VectorStore,
   QueryOptions,
 } from "../types";
+import type { LanguageModel } from "ai";
 import { VoyageEmbeddings } from "../embeddings/voyage";
 import { MongoDBVectorStore } from "../storage/mongodb";
-import { OpenAILLM } from "../llm/openai";
+import { VercelAILLM } from "../llm/vercel-ai";
 
 /**
  * Compute a hash of a Zod schema for cache differentiation.
@@ -100,9 +101,24 @@ export class SemanticCache {
    * It handles all component initialization and wiring.
    *
    * @param config - Complete configuration object
+   * @param model - Optional Vercel AI SDK LanguageModel. If not provided,
+   *                uses OpenAI with the config's API key and model settings.
    * @returns Configured SemanticCache instance
+   *
+   * @example
+   * ```typescript
+   * import { openai } from "@ai-sdk/openai";
+   * import { anthropic } from "@ai-sdk/anthropic";
+   *
+   * // Use default OpenAI (requires OPENAI_API_KEY in config)
+   * const cache1 = SemanticCache.fromConfig(config);
+   *
+   * // Use any Vercel AI SDK model
+   * const cache2 = SemanticCache.fromConfig(config, openai("gpt-5-mini"));
+   * const cache3 = SemanticCache.fromConfig(config, anthropic("claude-sonnet-4-20250514"));
+   * ```
    */
-  static fromConfig(config: SemanticCacheConfig): SemanticCache {
+  static fromConfig(config: SemanticCacheConfig, model?: LanguageModel): SemanticCache {
     const embeddings = new VoyageEmbeddings(config.voyageApiKey);
     const storage = new MongoDBVectorStore({
       uri: config.mongoUri,
@@ -112,9 +128,41 @@ export class SemanticCache {
       vectorSearchIndexName: config.vectorSearchIndexName || "default",
       embeddingDimension: embeddings.getDimension(),
     });
-    const llm = new OpenAILLM(config.openaiApiKey, config.llmModel);
+
+    // Use provided model or create default OpenAI model
+    let llm: LLMProvider;
+    if (model) {
+      llm = new VercelAILLM(model);
+    } else {
+      // Lazy import to avoid requiring @ai-sdk/openai if user provides their own model
+      const { createOpenAI } = require("@ai-sdk/openai");
+      const openai = createOpenAI({ apiKey: config.openaiApiKey });
+      llm = new VercelAILLM(openai(config.llmModel || "gpt-5-mini"));
+    }
 
     return new SemanticCache(embeddings, storage, llm, config.similarityThreshold || 0.85);
+  }
+
+  /**
+   * Create a SemanticCache with a specific Vercel AI SDK model.
+   *
+   * Convenience method for quickly creating a cache with any LLM provider.
+   *
+   * @param config - Configuration object (MongoDB, VoyageAI settings)
+   * @param model - Vercel AI SDK LanguageModel
+   * @returns Configured SemanticCache instance
+   *
+   * @example
+   * ```typescript
+   * import { anthropic } from "@ai-sdk/anthropic";
+   * import { google } from "@ai-sdk/google";
+   *
+   * const cache = SemanticCache.create(config, anthropic("claude-sonnet-4-20250514"));
+   * const cache2 = SemanticCache.create(config, google("gemini-2.0-flash"));
+   * ```
+   */
+  static create(config: SemanticCacheConfig, model: LanguageModel): SemanticCache {
+    return SemanticCache.fromConfig(config, model);
   }
 
   /**

@@ -90,7 +90,7 @@ program
       cache = SemanticCache.fromConfig(config);
 
       for (let i = 0; i < queries.length; i++) {
-        const query = queries[i];
+        const query = queries[i]!;
         console.log(chalk.white.bold(`\n[${i + 1}/${queries.length}] Query:`));
         console.log(chalk.yellow(`  "${query}"`));
 

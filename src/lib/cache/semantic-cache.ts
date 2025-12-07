@@ -172,6 +172,13 @@ export class SemanticCache {
     }
 
     const topResult = results[0];
+    if (!topResult) {
+      return {
+        hit: false,
+        query,
+        lookupTimeMs,
+      };
+    }
 
     // Check if similarity meets threshold
     if (topResult.score >= this.similarityThreshold) {

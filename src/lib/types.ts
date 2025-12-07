@@ -148,12 +148,15 @@ export interface EmbeddingProvider {
 
 /**
  * Interface for LLM providers.
+ *
+ * Implementations must support both unstructured (string) and
+ * structured (Zod schema) completions.
  */
 export interface LLMProvider {
   /** Generate a completion for the given prompt */
   complete(prompt: string): Promise<string>;
   /** Generate a structured completion using a Zod schema */
-  completeStructured?<T extends z.ZodType>(prompt: string, schema: T): Promise<z.infer<T>>;
+  completeStructured<T extends z.ZodType>(prompt: string, schema: T): Promise<z.infer<T>>;
   /** Get the model identifier */
   getModel(): string;
 }

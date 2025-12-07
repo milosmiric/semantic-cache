@@ -31,6 +31,7 @@ import type {
   CacheLookupResult,
   CacheStats,
   EmbeddingProvider,
+  LLMProvider,
   VectorStore,
   QueryOptions,
 } from "../types";
@@ -68,7 +69,7 @@ function computeSchemaHash(schema: z.ZodType): string {
 export class SemanticCache {
   private embeddings: EmbeddingProvider;
   private storage: VectorStore;
-  private llm: OpenAILLM;
+  private llm: LLMProvider;
   private similarityThreshold: number;
   private lastLLMCallDuration: number = 0;
 
@@ -77,13 +78,13 @@ export class SemanticCache {
    *
    * @param embeddings - Embedding provider for vector generation
    * @param storage - Vector storage backend
-   * @param llm - LLM provider for generating responses
+   * @param llm - LLM provider for generating responses (must implement LLMProvider)
    * @param similarityThreshold - Minimum similarity score for cache hits (0-1)
    */
   constructor(
     embeddings: EmbeddingProvider,
     storage: VectorStore,
-    llm: OpenAILLM,
+    llm: LLMProvider,
     similarityThreshold: number = 0.85
   ) {
     this.embeddings = embeddings;

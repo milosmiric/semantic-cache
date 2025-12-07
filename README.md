@@ -10,19 +10,19 @@ Semantic caching improves LLM application performance by caching responses based
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        User Query                                │
+│                        User Query                               │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    VoyageAI Embeddings                           │
-│              Generate vector representation                      │
+│                    VoyageAI Embeddings                          │
+│              Generate vector representation                     │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                MongoDB Atlas Vector Search                       │
-│              Find semantically similar queries                   │
+│                MongoDB Atlas Vector Search                      │
+│              Find semantically similar queries                  │
 └─────────────────────────────────────────────────────────────────┘
                               │
                     ┌─────────┴─────────┐
@@ -432,6 +432,10 @@ The CLI uses environment variables for configuration. When using the library dir
 - **Embedding Model**: `voyage-3.5-lite` is optimized for latency/cost; `voyage-3.5` offers best quality (both 1024 dims)
 - **Similarity Threshold**: Higher values = fewer false positives, lower values = more cache hits
 - **Index Configuration**: Ensure proper `numCandidates` for accurate results
+
+## Author
+
+**Miloš Mirić** - [GitHub](https://github.com/milosmiric) | [LinkedIn](https://www.linkedin.com/in/milosmiric/)
 
 ## License
 

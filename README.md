@@ -305,6 +305,45 @@ src/
     └── index.ts                 # CLI entry point
 ```
 
+## Testing
+
+The project includes comprehensive unit and integration tests using Bun's built-in test runner.
+
+### Running Tests
+
+```bash
+# Run all tests
+bun test
+
+# Run tests with coverage report
+bun test --coverage
+
+# Run specific test file
+bun test src/__tests__/semantic-cache.test.ts
+```
+
+### Test Coverage
+
+The test suite includes:
+- **Unit tests** for all components (SemanticCache, VoyageEmbeddings, OpenAILLM, MongoDBVectorStore)
+- **Integration tests** verifying end-to-end caching workflows
+- **Mock implementations** for external services (embedding provider, LLM, vector store)
+
+Note: External service providers (VoyageAI, OpenAI, MongoDB) have lower coverage because actual API calls require valid credentials. The core `SemanticCache` class has >90% line coverage.
+
+### Test Structure
+
+```
+src/__tests__/
+├── mocks.ts              # Mock implementations for testing
+├── semantic-cache.test.ts # Core cache functionality tests
+├── voyage.test.ts        # VoyageAI embeddings tests
+├── openai.test.ts        # OpenAI LLM tests
+├── mongodb.test.ts       # MongoDB Vector Store tests
+├── config.test.ts        # Configuration tests
+└── integration.test.ts   # End-to-end integration tests
+```
+
 ## How Semantic Caching Works
 
 1. **Embedding Generation**: When a query arrives, VoyageAI converts it to a dense vector representation (embedding) that captures semantic meaning.

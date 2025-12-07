@@ -47,17 +47,22 @@ Semantic caching improves LLM application performance by caching responses based
 3. **OpenAI API Key** - [Get one here](https://platform.openai.com/)
 4. **Bun** - [Install Bun](https://bun.sh/)
 
-## Setup
-
-### 1. Install Dependencies
+## Installation
 
 ```bash
-bun install
+# Using bun
+bun add @milosmiric/semantic-cache
+
+# Using npm
+npm install @milosmiric/semantic-cache
+
+# From GitHub
+bun add github:milosmiric/semantic-cache
 ```
 
-### 2. Configure Environment Variables
+## CLI Setup
 
-Create a `.env` file with the following:
+The CLI requires environment variables for configuration. Create a `.env` file:
 
 ```env
 MONGODB_ATLAS_URI="mongodb+srv://user:password@cluster.mongodb.net/?retryWrites=true&w=majority"
@@ -71,7 +76,9 @@ SIMILARITY_THRESHOLD="0.85"
 VECTOR_SEARCH_INDEX_NAME="default"
 ```
 
-### 3. Create Atlas Vector Search Index
+> **Note:** When using the library programmatically, you pass configuration directly to each component - no environment variables required.
+
+## MongoDB Atlas Vector Search Index
 
 In the MongoDB Atlas UI, navigate to your cluster and create a Vector Search Index on your collection with this definition:
 
@@ -90,8 +97,8 @@ In the MongoDB Atlas UI, navigate to your cluster and create a Vector Search Ind
 
 **Important:**
 - The `numDimensions` must match VoyageAI model output (1024 for `voyage-3.5`, `voyage-3.5-lite`; 512 for legacy `voyage-3-lite`)
-- The `path` must match `MONGODB_ATLAS_EMBEDDINGS_FIELD_NAME` in your `.env`
-- Index name must match `VECTOR_SEARCH_INDEX_NAME` (default: `default`)
+- The `path` must match the `embeddingFieldName` in your `MongoDBVectorStore` config
+- Index name must match `vectorSearchIndexName` in your config (default: `default`)
 
 ## CLI Usage
 
@@ -410,22 +417,6 @@ src/__tests__/
 ### Why Cosine Similarity?
 
 Cosine similarity measures the angle between two vectors, making it ideal for comparing semantic meaning regardless of vector magnitude. A score of 1.0 means identical direction (semantically equivalent), while 0.0 means orthogonal (completely different).
-
-## CLI Configuration
-
-The CLI uses environment variables for configuration. When using the library directly, you configure each component with your own values.
-
-| Environment Variable | Description | Default |
-|---------------------|-------------|---------|
-| `MONGODB_ATLAS_URI` | MongoDB connection string | Required |
-| `MONGODB_ATLAS_DB_NAME` | Database name | Required |
-| `MONGODB_ATLAS_COLLECTION_NAME` | Collection name | Required |
-| `MONGODB_ATLAS_EMBEDDINGS_FIELD_NAME` | Field for embeddings | `embedding` |
-| `VOYAGEAI_API_KEY` | VoyageAI API key | Required |
-| `OPENAI_API_KEY` | OpenAI API key | Required |
-| `LLM_MODEL` | LLM model identifier | `gpt-5-mini` |
-| `SIMILARITY_THRESHOLD` | Cache hit threshold (0-1) | `0.85` |
-| `VECTOR_SEARCH_INDEX_NAME` | Atlas index name | `default` |
 
 ## Performance Considerations
 

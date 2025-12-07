@@ -1,122 +1,45 @@
----
-description: Semantic Cache - LLM query caching with MongoDB Atlas Vector Search
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
-alwaysApply: true
----
-
 # Semantic Cache
 
-LLM query caching system using semantic similarity matching. Reduces API costs and latency by returning cached responses for semantically similar queries.
+LLM query caching using semantic similarity. Reduces API costs by returning cached responses for similar queries.
 
-## Project Architecture
+## Architecture
 
 ```
 Query → VoyageAI Embedding → MongoDB Vector Search → Cache Hit? → Return cached / Call LLM
 ```
 
-### Technology Stack
-- **MongoDB Atlas Vector Search** - Stores embeddings, performs cosine similarity search
-- **VoyageAI** - Generates 1024-dimensional embeddings (voyage-3 model)
-- **OpenAI** - LLM completions for cache misses
-- **LangChain** - OpenAI integration with structured output
-- **Zod** - Schema validation for typed responses
-
-### Key Components
+## Key Files
 
 | File | Purpose |
 |------|---------|
 | `src/lib/cache/semantic-cache.ts` | Core cache orchestration |
 | `src/lib/storage/mongodb.ts` | MongoDB Atlas Vector Store |
-| `src/lib/embeddings/voyage.ts` | VoyageAI native SDK integration |
-| `src/lib/llm/openai.ts` | LangChain OpenAI wrapper |
-| `src/lib/config.ts` | Environment configuration |
-| `src/lib/types.ts` | TypeScript type definitions |
-| `src/cli/index.ts` | CLI entry point |
+| `src/lib/embeddings/voyage.ts` | VoyageAI embeddings (voyage-3.5) |
+| `src/lib/llm/vercel-ai.ts` | Vercel AI SDK adapter (any provider) |
+| `src/lib/types.ts` | TypeScript interfaces |
+| `src/cli/config.ts` | CLI env var configuration |
 
-### Data Flow
-1. User submits query
-2. VoyageAI generates 1024-dim embedding vector
-3. MongoDB `$vectorSearch` finds similar cached queries
-4. If similarity >= threshold (default 0.85), return cached response
-5. Otherwise, call OpenAI LLM, cache result, return response
+## Stack
 
-## Configuration
+- **MongoDB Atlas Vector Search** - Vector storage + cosine similarity
+- **VoyageAI** - Embeddings (voyage-3.5, 1024 dims)
+- **Vercel AI SDK** - LLM completions (OpenAI, Anthropic, Google, etc.)
+- **Zod** - Structured output schemas
 
-Environment variables (auto-loaded by Bun from `.env`):
+## CLI vs Library
 
-| Variable | Description |
-|----------|-------------|
-| `MONGODB_ATLAS_URI` | MongoDB connection string |
-| `MONGODB_ATLAS_DB_NAME` | Database name |
-| `MONGODB_ATLAS_COLLECTION_NAME` | Collection for cache entries |
-| `MONGODB_ATLAS_EMBEDDINGS_FIELD_NAME` | Field storing vectors (default: `embedding`) |
-| `VECTOR_SEARCH_INDEX_NAME` | Atlas index name (default: `default`) |
-| `VOYAGEAI_API_KEY` | VoyageAI API key |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `LLM_MODEL` | OpenAI model (default: `gpt-5-mini`) |
-| `SIMILARITY_THRESHOLD` | Cache hit threshold 0-1 (default: `0.85`) |
+- **CLI**: Uses env vars via `src/cli/config.ts`
+- **Library**: Components configured directly (no env vars required)
 
-### MongoDB Atlas Vector Search Index
+## Development Notes
 
-Required index definition on the collection:
-```json
-{
-  "fields": [{
-    "type": "vector",
-    "path": "embedding",
-    "numDimensions": 1024,
-    "similarity": "cosine"
-  }]
-}
-```
-
-## CLI Commands
-
-```bash
-bun run demo                    # Interactive demonstration
-bun run cli demo-structured     # Structured output demo
-bun run cli query "question"    # Query with caching
-bun run cli stats               # Cache statistics
-bun run cli clear               # Clear all cache entries
-```
-
-## Library Usage
-
-### String Response (default)
-```typescript
-import { SemanticCache, loadConfigFromEnv } from "./src/lib";
-
-const cache = SemanticCache.fromConfig(loadConfigFromEnv());
-const result = await cache.query("What is the capital of France?");
-
-console.log(result.response);      // "Paris..."
-console.log(result.fromCache);     // true/false
-
-await cache.close();
-```
-
-### Structured Output with Zod
-```typescript
-import { SemanticCache, loadConfigFromEnv, z } from "./src/lib";
-
-const cache = SemanticCache.fromConfig(loadConfigFromEnv());
-
-const AnswerSchema = z.object({
-  answer: z.string(),
-  confidence: z.number(),
-});
-
-const result = await cache.query("What is 2+2?", { schema: AnswerSchema });
-
-console.log(result.response.answer);     // "4"
-console.log(result.response.confidence); // 0.99
-
-await cache.close();
-```
+- **Path aliases**: Use `@/` for imports (e.g., `@/lib/types`, `@/cli/config`)
+- **Build**: `bun run build` uses tsdown, outputs to `dist/`
+- **Tests**: Mocks in `src/__tests__/mocks.ts` for testing without external services
+- **Pluggable**: `EmbeddingProvider`, `VectorStore`, `LLMProvider` interfaces in `types.ts`
+- **Schema-aware caching**: Same query + different Zod schema = separate cache entries
 
 ---
-
-## Bun Runtime
 
 Default to using Bun instead of Node.js.
 
@@ -128,7 +51,7 @@ Default to using Bun instead of Node.js.
 - Use `bunx <package> <command>` instead of `npx <package> <command>`
 - Bun automatically loads .env, so don't use dotenv.
 
-### Bun APIs
+## APIs
 
 - `Bun.serve()` supports WebSockets, HTTPS, and routes. Don't use `express`.
 - `bun:sqlite` for SQLite. Don't use `better-sqlite3`.
@@ -138,16 +61,88 @@ Default to using Bun instead of Node.js.
 - Prefer `Bun.file` over `node:fs`'s readFile/writeFile
 - Bun.$`ls` instead of execa.
 
-### Testing
+## Testing
 
 Use `bun test` to run tests.
 
-```ts
+```ts#index.test.ts
 import { test, expect } from "bun:test";
 
-test("cache hit returns correct response", async () => {
-  // test implementation
+test("hello world", () => {
+  expect(1).toBe(1);
 });
+```
+
+## Frontend
+
+Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+
+Server:
+
+```ts#index.ts
+import index from "./index.html"
+
+Bun.serve({
+  routes: {
+    "/": index,
+    "/api/users/:id": {
+      GET: (req) => {
+        return new Response(JSON.stringify({ id: req.params.id }));
+      },
+    },
+  },
+  // optional websocket support
+  websocket: {
+    open: (ws) => {
+      ws.send("Hello, world!");
+    },
+    message: (ws, message) => {
+      ws.send(message);
+    },
+    close: (ws) => {
+      // handle close
+    }
+  },
+  development: {
+    hmr: true,
+    console: true,
+  }
+})
+```
+
+HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+
+```html#index.html
+<html>
+  <body>
+    <h1>Hello, world!</h1>
+    <script type="module" src="./frontend.tsx"></script>
+  </body>
+</html>
+```
+
+With the following `frontend.tsx`:
+
+```tsx#frontend.tsx
+import React from "react";
+import { createRoot } from "react-dom/client";
+
+// import .css files directly and it works
+import './index.css';
+
+const root = createRoot(document.body);
+
+export default function Frontend() {
+  return <h1>Hello, world!</h1>;
+}
+
+root.render(<Frontend />);
+```
+
+Then, run index.ts
+
+```sh
+bun --hot ./index.ts
 ```
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.

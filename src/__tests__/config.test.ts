@@ -30,7 +30,7 @@ describe("loadConfigFromEnv (CLI)", () => {
   });
 
   test("should load all configuration values", async () => {
-    const { loadConfigFromEnv } = await import("../cli/config");
+    const { loadConfigFromEnv } = await import("@/cli/config");
 
     const config = loadConfigFromEnv();
 
@@ -53,9 +53,9 @@ describe("loadConfigFromEnv (CLI)", () => {
 
     // Need to re-import to pick up new env values
     // Clear module cache
-    delete require.cache[require.resolve("../cli/config")];
+    delete require.cache[require.resolve("@/cli/config")];
 
-    const { loadConfigFromEnv } = await import("../cli/config");
+    const { loadConfigFromEnv } = await import("@/cli/config");
     const config = loadConfigFromEnv();
 
     expect(config.llmModel).toBe("gpt-5-mini");
@@ -68,9 +68,9 @@ describe("loadConfigFromEnv (CLI)", () => {
     delete process.env.MONGODB_ATLAS_URI;
 
     // Clear module cache
-    delete require.cache[require.resolve("../cli/config")];
+    delete require.cache[require.resolve("@/cli/config")];
 
-    const { loadConfigFromEnv } = await import("../cli/config");
+    const { loadConfigFromEnv } = await import("@/cli/config");
 
     expect(() => loadConfigFromEnv()).toThrow();
   });
@@ -78,9 +78,9 @@ describe("loadConfigFromEnv (CLI)", () => {
   test("should parse similarity threshold as number", async () => {
     process.env.SIMILARITY_THRESHOLD = "0.75";
 
-    delete require.cache[require.resolve("../cli/config")];
+    delete require.cache[require.resolve("@/cli/config")];
 
-    const { loadConfigFromEnv } = await import("../cli/config");
+    const { loadConfigFromEnv } = await import("@/cli/config");
     const config = loadConfigFromEnv();
 
     expect(typeof config.similarityThreshold).toBe("number");
@@ -90,7 +90,7 @@ describe("loadConfigFromEnv (CLI)", () => {
 
 describe("CLIConfig type", () => {
   test("should have all required fields", async () => {
-    const { loadConfigFromEnv } = await import("../cli/config");
+    const { loadConfigFromEnv } = await import("@/cli/config");
 
     // Set up required env vars
     process.env.MONGODB_ATLAS_URI = "mongodb://test";

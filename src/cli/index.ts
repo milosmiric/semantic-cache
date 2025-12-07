@@ -27,11 +27,11 @@
 
 import { program } from "commander";
 import chalk from "chalk";
-import { queryCommand } from "./commands/query";
-import { statsCommand } from "./commands/stats";
-import { clearCommand } from "./commands/clear";
-import { demoCommand } from "./commands/demo";
-import { demoStructuredCommand } from "./commands/demo-structured";
+import { queryCommand } from "@/cli/commands/query";
+import { statsCommand } from "@/cli/commands/stats";
+import { clearCommand } from "@/cli/commands/clear";
+import { demoCommand } from "@/cli/commands/demo";
+import { demoStructuredCommand } from "@/cli/commands/demo-structured";
 
 // Package version (would normally import from package.json)
 const VERSION = "1.0.0";

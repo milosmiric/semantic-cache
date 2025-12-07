@@ -7,7 +7,7 @@
  */
 
 import { describe, test, expect, mock, beforeEach } from "bun:test";
-import { VoyageEmbeddings } from "../lib/embeddings/voyage";
+import { VoyageEmbeddings } from "@/lib/embeddings/voyage";
 
 describe("VoyageEmbeddings", () => {
   describe("constructor", () => {

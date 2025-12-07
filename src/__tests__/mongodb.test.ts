@@ -7,7 +7,7 @@
  */
 
 import { describe, test, expect } from "bun:test";
-import { MongoDBVectorStore } from "../lib/storage/mongodb";
+import { MongoDBVectorStore } from "@/lib/storage/mongodb";
 
 describe("MongoDBVectorStore", () => {
   // Note: These tests verify interface and configuration.

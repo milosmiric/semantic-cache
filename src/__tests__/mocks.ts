@@ -13,7 +13,7 @@ import type {
   SimilaritySearchResult,
   CacheStats,
   EmbeddingOptions,
-} from "../lib/types";
+} from "@/lib/types";
 import type { z } from "zod";
 
 /**

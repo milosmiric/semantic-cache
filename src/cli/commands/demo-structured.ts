@@ -6,8 +6,8 @@
  */
 
 import chalk from "chalk";
-import { SemanticCache, z } from "../../lib";
-import { loadConfigFromEnv, createCacheFromConfig } from "../config";
+import { SemanticCache, z } from "@/lib";
+import { loadConfigFromEnv, createCacheFromConfig } from "@/cli/config";
 
 /**
  * Small delay helper to allow vector search index to update.

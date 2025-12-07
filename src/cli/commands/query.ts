@@ -7,8 +7,8 @@
  */
 
 import chalk from "chalk";
-import { SemanticCache } from "../../lib";
-import { loadConfigFromEnv, createCacheFromConfig } from "../config";
+import { SemanticCache } from "@/lib";
+import { loadConfigFromEnv, createCacheFromConfig } from "@/cli/config";
 
 /**
  * Execute a query through the semantic cache.

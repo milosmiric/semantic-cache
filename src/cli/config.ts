@@ -5,10 +5,10 @@
  * This is CLI-specific and not part of the library exports.
  */
 
-import { VoyageEmbeddings } from "../lib/embeddings/voyage";
-import { MongoDBVectorStore } from "../lib/storage/mongodb";
-import { VercelAILLM } from "../lib/llm/vercel-ai";
-import { SemanticCache } from "../lib/cache/semantic-cache";
+import { VoyageEmbeddings } from "@/lib/embeddings/voyage";
+import { MongoDBVectorStore } from "@/lib/storage/mongodb";
+import { VercelAILLM } from "@/lib/llm/vercel-ai";
+import { SemanticCache } from "@/lib/cache/semantic-cache";
 import { createOpenAI } from "@ai-sdk/openai";
 
 /**

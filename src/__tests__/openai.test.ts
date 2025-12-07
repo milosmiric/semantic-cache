@@ -6,7 +6,7 @@
  */
 
 import { describe, test, expect } from "bun:test";
-import { VercelAILLM } from "../lib/llm/vercel-ai";
+import { VercelAILLM } from "@/lib/llm/vercel-ai";
 
 // Mock LanguageModel for testing
 const mockLanguageModel = {

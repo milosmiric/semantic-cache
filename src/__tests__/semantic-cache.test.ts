@@ -7,13 +7,13 @@
 
 import { describe, test, expect, beforeEach } from "bun:test";
 import { z } from "zod";
-import { SemanticCache } from "../lib/cache/semantic-cache";
+import { SemanticCache } from "@/lib/cache/semantic-cache";
 import {
   MockEmbeddingProvider,
   MockLLMProvider,
   MockVectorStore,
   createMockCacheEntry,
-} from "./mocks";
+} from "@/__tests__/mocks";
 
 describe("SemanticCache", () => {
   let embeddings: MockEmbeddingProvider;

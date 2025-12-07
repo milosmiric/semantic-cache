@@ -232,12 +232,54 @@ const storage = new MongoDBVectorStore({
   embeddingDimension: 1024,
 });
 
-// Create custom LLM
+// Create LLM provider (OpenAILLM implements LLMProvider interface)
 const llm = new OpenAILLM(OPENAI_API_KEY, "gpt-5-mini");
 
-// Assemble cache
+// Assemble cache - accepts any LLMProvider implementation
 const cache = new SemanticCache(embeddings, storage, llm, 0.85);
 ```
+
+### Custom LLM Provider
+
+The `SemanticCache` accepts any implementation of the `LLMProvider` interface, allowing you to use different LLM backends:
+
+```typescript
+import type { LLMProvider } from "@milosmiric/semantic-cache";
+import { z } from "zod";
+
+// Implement custom LLM provider
+class AnthropicLLM implements LLMProvider {
+  constructor(private apiKey: string, private model: string) {}
+
+  async complete(prompt: string): Promise<string> {
+    // Your implementation here
+    const response = await callAnthropicAPI(this.apiKey, this.model, prompt);
+    return response.content;
+  }
+
+  async completeStructured<T extends z.ZodType>(
+    prompt: string,
+    schema: T
+  ): Promise<z.infer<T>> {
+    // Your structured output implementation
+    const response = await this.complete(prompt);
+    return schema.parse(JSON.parse(response));
+  }
+
+  getModel(): string {
+    return this.model;
+  }
+}
+
+// Use custom provider with SemanticCache
+const customLLM = new AnthropicLLM(ANTHROPIC_API_KEY, "claude-3-sonnet");
+const cache = new SemanticCache(embeddings, storage, customLLM, 0.85);
+```
+
+This abstraction enables:
+- Switching between LLM providers without changing cache logic
+- Testing with mock LLM implementations
+- Supporting multiple LLM backends in the same application
 
 ## Project Structure
 

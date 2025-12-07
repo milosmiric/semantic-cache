@@ -9,7 +9,6 @@ export default defineConfig({
   dts: true,
   clean: true,
   outDir: "dist",
-  outputExtension: () => ({ js: ".js", dts: ".d.ts" }),
   external: [
     "mongodb",
     "voyageai",

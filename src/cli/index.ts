@@ -32,9 +32,7 @@ import { statsCommand } from "@/cli/commands/stats";
 import { clearCommand } from "@/cli/commands/clear";
 import { demoCommand } from "@/cli/commands/demo";
 import { demoStructuredCommand } from "@/cli/commands/demo-structured";
-
-// Package version (would normally import from package.json)
-const VERSION = "1.0.0";
+import packageJson from "../../package.json";
 
 program
   .name("semantic-cache")
@@ -44,7 +42,7 @@ program
       chalk.gray("  Uses MongoDB Atlas Vector Search + VoyageAI embeddings to cache\n") +
       chalk.gray("  semantically similar queries, reducing LLM API calls and latency.")
   )
-  .version(VERSION);
+  .version(packageJson.version);
 
 // Query command
 program

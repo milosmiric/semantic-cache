@@ -21,7 +21,7 @@ describe("Integration: SemanticCache End-to-End", () => {
     embeddings = new MockEmbeddingProvider(1024);
     storage = new MockVectorStore();
     llm = new MockLLMProvider();
-    cache = new SemanticCache(embeddings, storage, llm, 0.85);
+    cache = new SemanticCache(embeddings, storage, llm, { similarityThreshold: 0.85 });
   });
 
   describe("Basic caching workflow", () => {

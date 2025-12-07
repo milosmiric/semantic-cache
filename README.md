@@ -147,13 +147,27 @@ bun run cli demo-structured
 Use the semantic cache library in your own code:
 
 ```typescript
-import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
+import {
+  SemanticCache,
+  VoyageEmbeddings,
+  MongoDBVectorStore,
+  VercelAILLM,
+} from "@milosmiric/semantic-cache";
+import { openai } from "@ai-sdk/openai";
 
-// Load configuration from environment
-const config = loadConfigFromEnv();
-
-// Create cache instance (uses OpenAI by default)
-const cache = SemanticCache.fromConfig(config);
+// Create the cache with your own configured components
+const cache = new SemanticCache(
+  new VoyageEmbeddings("your-voyage-api-key"),
+  new MongoDBVectorStore({
+    uri: "mongodb+srv://...",
+    dbName: "my-app",
+    collectionName: "llm-cache",
+    embeddingFieldName: "embedding",
+    vectorSearchIndexName: "default",
+    embeddingDimension: 1024,
+  }),
+  new VercelAILLM(openai("gpt-5-mini"))
+);
 
 // Query with automatic caching
 const result = await cache.query("What is the capital of France?");
@@ -174,24 +188,38 @@ await cache.close();
 
 ### Using Different LLM Providers
 
-Switch to any LLM provider supported by Vercel AI SDK:
+The library uses Vercel AI SDK, supporting any LLM provider:
 
 ```typescript
-import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
+import { SemanticCache, VoyageEmbeddings, MongoDBVectorStore, VercelAILLM } from "@milosmiric/semantic-cache";
 import { openai } from "@ai-sdk/openai";       // bun add @ai-sdk/openai
 import { anthropic } from "@ai-sdk/anthropic"; // bun add @ai-sdk/anthropic
 import { google } from "@ai-sdk/google";       // bun add @ai-sdk/google
 
-const config = loadConfigFromEnv();
+// Create shared components
+const embeddings = new VoyageEmbeddings("your-voyage-api-key");
+const storage = new MongoDBVectorStore({ /* config */ });
 
 // Use OpenAI GPT-5
-const openaiCache = SemanticCache.fromConfig(config, openai("gpt-5-mini"));
+const openaiCache = new SemanticCache(
+  embeddings,
+  storage,
+  new VercelAILLM(openai("gpt-5-mini"))
+);
 
 // Use Anthropic Claude
-const claudeCache = SemanticCache.fromConfig(config, anthropic("claude-sonnet-4-20250514"));
+const claudeCache = new SemanticCache(
+  embeddings,
+  storage,
+  new VercelAILLM(anthropic("claude-sonnet-4-20250514"))
+);
 
 // Use Google Gemini
-const geminiCache = SemanticCache.fromConfig(config, google("gemini-2.0-flash"));
+const geminiCache = new SemanticCache(
+  embeddings,
+  storage,
+  new VercelAILLM(google("gemini-2.0-flash"))
+);
 
 // All caches work the same way
 const result = await claudeCache.query("Explain quantum computing");
@@ -212,9 +240,14 @@ Available providers (install separately):
 Get type-safe responses using Zod schemas:
 
 ```typescript
-import { SemanticCache, loadConfigFromEnv, z } from "@milosmiric/semantic-cache";
+import { SemanticCache, VoyageEmbeddings, MongoDBVectorStore, VercelAILLM, z } from "@milosmiric/semantic-cache";
+import { openai } from "@ai-sdk/openai";
 
-const cache = SemanticCache.fromConfig(loadConfigFromEnv());
+const cache = new SemanticCache(
+  new VoyageEmbeddings("your-voyage-api-key"),
+  new MongoDBVectorStore({ /* config */ }),
+  new VercelAILLM(openai("gpt-5-mini"))
+);
 
 // Define a schema for structured responses
 const CapitalSchema = z.object({
@@ -242,46 +275,58 @@ await cache.close();
 
 Schema-aware caching ensures that the same query with different schemas creates separate cache entries, preventing type mismatches.
 
-### Advanced Usage
+### Configuration Options
 
-For more control, you can use the individual components:
+Pass options to customize cache behavior:
 
 ```typescript
-import {
-  VoyageEmbeddings,
-  MongoDBVectorStore,
-  VercelAILLM,
-  SemanticCache
-} from "@milosmiric/semantic-cache";
-import { anthropic } from "@ai-sdk/anthropic";
+const cache = new SemanticCache(
+  embeddings,
+  storage,
+  llm,
+  {
+    similarityThreshold: 0.9, // Higher = stricter matching (default: 0.85)
+  }
+);
 
-// Create custom embeddings instance
-const embeddings = new VoyageEmbeddings(VOYAGE_API_KEY, "voyage-3");
-
-// Create custom storage
-const storage = new MongoDBVectorStore({
-  uri: MONGO_URI,
-  dbName: "my-db",
-  collectionName: "my-cache",
-  embeddingFieldName: "embedding",
-  vectorSearchIndexName: "default",
-  embeddingDimension: 1024,
-});
-
-// Create LLM provider with any Vercel AI SDK model
-const llm = new VercelAILLM(anthropic("claude-sonnet-4-20250514"));
-
-// Assemble cache
-const cache = new SemanticCache(embeddings, storage, llm, 0.85);
+// Or update threshold at runtime
+cache.setThreshold(0.8);
 ```
 
-Available Vercel AI SDK providers (install separately):
-- `@ai-sdk/openai` - OpenAI (GPT-4, GPT-5)
-- `@ai-sdk/anthropic` - Anthropic (Claude)
-- `@ai-sdk/google` - Google (Gemini)
-- `@ai-sdk/mistral` - Mistral
-- `@ai-sdk/amazon-bedrock` - AWS Bedrock
-- `@ai-sdk/azure` - Azure OpenAI
+### Using in Next.js
+
+Example of using the semantic cache in a Next.js API route:
+
+```typescript
+// app/api/chat/route.ts
+import { SemanticCache, VoyageEmbeddings, MongoDBVectorStore, VercelAILLM } from "@milosmiric/semantic-cache";
+import { openai } from "@ai-sdk/openai";
+
+// Create cache instance (consider connection pooling in production)
+const cache = new SemanticCache(
+  new VoyageEmbeddings(process.env.VOYAGE_API_KEY!),
+  new MongoDBVectorStore({
+    uri: process.env.MONGODB_URI!,
+    dbName: "myapp",
+    collectionName: "llm-cache",
+    embeddingFieldName: "embedding",
+    vectorSearchIndexName: "default",
+    embeddingDimension: 1024,
+  }),
+  new VercelAILLM(openai("gpt-5-mini"))
+);
+
+export async function POST(request: Request) {
+  const { query } = await request.json();
+  const result = await cache.query(query);
+
+  return Response.json({
+    response: result.response,
+    fromCache: result.fromCache,
+    timeMs: result.totalTimeMs,
+  });
+}
+```
 
 This abstraction enables:
 - Switching between LLM providers without changing cache logic
@@ -302,7 +347,6 @@ src/
 │   │   └── mongodb.ts           # MongoDB Atlas Vector Store
 │   ├── llm/
 │   │   └── vercel-ai.ts         # Vercel AI SDK LLM adapter
-│   ├── config.ts                # Configuration management
 │   ├── types.ts                 # TypeScript type definitions
 │   └── index.ts                 # Library exports
 └── cli/                    # Command-line interface
@@ -310,6 +354,7 @@ src/
     │   ├── query.ts             # Query command
     │   ├── stats.ts             # Stats command
     │   └── clear.ts             # Clear command
+    ├── config.ts                # CLI configuration (env vars)
     └── index.ts                 # CLI entry point
 ```
 
@@ -333,7 +378,7 @@ bun test src/__tests__/semantic-cache.test.ts
 ### Test Coverage
 
 The test suite includes:
-- **Unit tests** for all components (SemanticCache, VoyageEmbeddings, OpenAILLM, MongoDBVectorStore)
+- **Unit tests** for all components (SemanticCache, VoyageEmbeddings, VercelAILLM, MongoDBVectorStore)
 - **Integration tests** verifying end-to-end caching workflows
 - **Mock implementations** for external services (embedding provider, LLM, vector store)
 
@@ -343,13 +388,13 @@ Note: External service providers (VoyageAI, OpenAI, MongoDB) have lower coverage
 
 ```
 src/__tests__/
-├── mocks.ts              # Mock implementations for testing
+├── mocks.ts               # Mock implementations for testing
 ├── semantic-cache.test.ts # Core cache functionality tests
-├── voyage.test.ts        # VoyageAI embeddings tests
-├── openai.test.ts        # OpenAI LLM tests
-├── mongodb.test.ts       # MongoDB Vector Store tests
-├── config.test.ts        # Configuration tests
-└── integration.test.ts   # End-to-end integration tests
+├── voyage.test.ts         # VoyageAI embeddings tests
+├── vercel-ai.test.ts      # Vercel AI SDK LLM tests
+├── mongodb.test.ts        # MongoDB Vector Store tests
+├── config.test.ts         # CLI configuration tests
+└── integration.test.ts    # End-to-end integration tests
 ```
 
 ## How Semantic Caching Works
@@ -360,13 +405,15 @@ src/__tests__/
 
 3. **Threshold Check**: If the similarity score exceeds the configured threshold (default 0.85), the cached response is returned.
 
-4. **Cache Miss Handling**: For cache misses, the query is sent to OpenAI, and both the query embedding and response are stored for future use.
+4. **Cache Miss Handling**: For cache misses, the query is sent to the configured LLM, and both the query embedding and response are stored for future use.
 
 ### Why Cosine Similarity?
 
 Cosine similarity measures the angle between two vectors, making it ideal for comparing semantic meaning regardless of vector magnitude. A score of 1.0 means identical direction (semantically equivalent), while 0.0 means orthogonal (completely different).
 
-## Configuration Options
+## CLI Configuration
+
+The CLI uses environment variables for configuration. When using the library directly, you configure each component with your own values.
 
 | Environment Variable | Description | Default |
 |---------------------|-------------|---------|
@@ -376,7 +423,7 @@ Cosine similarity measures the angle between two vectors, making it ideal for co
 | `MONGODB_ATLAS_EMBEDDINGS_FIELD_NAME` | Field for embeddings | `embedding` |
 | `VOYAGEAI_API_KEY` | VoyageAI API key | Required |
 | `OPENAI_API_KEY` | OpenAI API key | Required |
-| `LLM_MODEL` | OpenAI model identifier | `gpt-5-mini` |
+| `LLM_MODEL` | LLM model identifier | `gpt-5-mini` |
 | `SIMILARITY_THRESHOLD` | Cache hit threshold (0-1) | `0.85` |
 | `VECTOR_SEARCH_INDEX_NAME` | Atlas index name | `default` |
 

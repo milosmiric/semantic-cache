@@ -1,12 +1,13 @@
 /**
- * Unit tests for configuration management.
+ * Unit tests for CLI configuration management.
  *
  * Tests environment variable loading and configuration validation.
+ * Note: This tests the CLI-specific config helper, not the library itself.
  */
 
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 
-describe("loadConfigFromEnv", () => {
+describe("loadConfigFromEnv (CLI)", () => {
   // Store original env values
   const originalEnv = { ...process.env };
 
@@ -29,7 +30,7 @@ describe("loadConfigFromEnv", () => {
   });
 
   test("should load all configuration values", async () => {
-    const { loadConfigFromEnv } = await import("../lib/config");
+    const { loadConfigFromEnv } = await import("../cli/config");
 
     const config = loadConfigFromEnv();
 
@@ -52,9 +53,9 @@ describe("loadConfigFromEnv", () => {
 
     // Need to re-import to pick up new env values
     // Clear module cache
-    delete require.cache[require.resolve("../lib/config")];
+    delete require.cache[require.resolve("../cli/config")];
 
-    const { loadConfigFromEnv } = await import("../lib/config");
+    const { loadConfigFromEnv } = await import("../cli/config");
     const config = loadConfigFromEnv();
 
     expect(config.llmModel).toBe("gpt-5-mini");
@@ -67,9 +68,9 @@ describe("loadConfigFromEnv", () => {
     delete process.env.MONGODB_ATLAS_URI;
 
     // Clear module cache
-    delete require.cache[require.resolve("../lib/config")];
+    delete require.cache[require.resolve("../cli/config")];
 
-    const { loadConfigFromEnv } = await import("../lib/config");
+    const { loadConfigFromEnv } = await import("../cli/config");
 
     expect(() => loadConfigFromEnv()).toThrow();
   });
@@ -77,9 +78,9 @@ describe("loadConfigFromEnv", () => {
   test("should parse similarity threshold as number", async () => {
     process.env.SIMILARITY_THRESHOLD = "0.75";
 
-    delete require.cache[require.resolve("../lib/config")];
+    delete require.cache[require.resolve("../cli/config")];
 
-    const { loadConfigFromEnv } = await import("../lib/config");
+    const { loadConfigFromEnv } = await import("../cli/config");
     const config = loadConfigFromEnv();
 
     expect(typeof config.similarityThreshold).toBe("number");
@@ -87,9 +88,9 @@ describe("loadConfigFromEnv", () => {
   });
 });
 
-describe("SemanticCacheConfig type", () => {
+describe("CLIConfig type", () => {
   test("should have all required fields", async () => {
-    const { loadConfigFromEnv } = await import("../lib/config");
+    const { loadConfigFromEnv } = await import("../cli/config");
 
     // Set up required env vars
     process.env.MONGODB_ATLAS_URI = "mongodb://test";

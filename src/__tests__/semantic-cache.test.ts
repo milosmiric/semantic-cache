@@ -25,7 +25,7 @@ describe("SemanticCache", () => {
     embeddings = new MockEmbeddingProvider(1024);
     storage = new MockVectorStore();
     llm = new MockLLMProvider();
-    cache = new SemanticCache(embeddings, storage, llm, 0.85);
+    cache = new SemanticCache(embeddings, storage, llm, { similarityThreshold: 0.85 });
   });
 
   describe("constructor", () => {
@@ -35,6 +35,11 @@ describe("SemanticCache", () => {
     });
 
     test("should use default threshold if not provided", () => {
+      const defaultCache = new SemanticCache(embeddings, storage, llm, {});
+      expect(defaultCache.getThreshold()).toBe(0.85);
+    });
+
+    test("should use default threshold with empty options", () => {
       const defaultCache = new SemanticCache(embeddings, storage, llm);
       expect(defaultCache.getThreshold()).toBe(0.85);
     });

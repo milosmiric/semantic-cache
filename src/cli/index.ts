@@ -83,13 +83,14 @@ program
       "What is the capital of Germany?",
     ];
 
-    const { SemanticCache, loadConfigFromEnv } = await import("../lib");
+    const { SemanticCache } = await import("../lib");
+    const { loadConfigFromEnv, createCacheFromConfig } = await import("./config");
 
     let cache: InstanceType<typeof SemanticCache> | null = null;
 
     try {
       const config = loadConfigFromEnv();
-      cache = SemanticCache.fromConfig(config);
+      cache = createCacheFromConfig(config);
 
       for (let i = 0; i < queries.length; i++) {
         const query = queries[i]!;
@@ -142,7 +143,8 @@ program
     console.log(chalk.gray("The same query with different schemas creates separate cache entries.\n"));
     console.log(chalk.gray("─".repeat(50)));
 
-    const { SemanticCache, loadConfigFromEnv, z } = await import("../lib");
+    const { SemanticCache, z } = await import("../lib");
+    const { loadConfigFromEnv, createCacheFromConfig } = await import("./config");
 
     // Define schemas
     const SimpleAnswerSchema = z.object({
@@ -159,7 +161,7 @@ program
 
     try {
       const config = loadConfigFromEnv();
-      cache = SemanticCache.fromConfig(config);
+      cache = createCacheFromConfig(config);
 
       const query = "What is the largest planet in our solar system?";
 

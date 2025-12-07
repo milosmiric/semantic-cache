@@ -8,27 +8,14 @@
 import type { z } from "zod";
 
 /**
- * Configuration options for the semantic cache system.
+ * Options for configuring the SemanticCache.
+ *
+ * These are cache-specific settings. Components (embeddings, storage, LLM)
+ * should be configured separately with their own credentials.
  */
-export interface SemanticCacheConfig {
-  /** MongoDB Atlas connection URI */
-  mongoUri: string;
-  /** Database name for cache storage */
-  dbName: string;
-  /** Collection name for cached entries */
-  collectionName: string;
-  /** Field name for storing vector embeddings */
-  embeddingsFieldName: string;
-  /** VoyageAI API key for generating embeddings */
-  voyageApiKey: string;
-  /** OpenAI API key for LLM queries */
-  openaiApiKey: string;
-  /** OpenAI model to use for completions */
-  llmModel: string;
-  /** Similarity threshold (0-1) for cache hits. Higher = stricter matching */
+export interface SemanticCacheOptions {
+  /** Similarity threshold (0-1) for cache hits. Higher = stricter matching. Default: 0.85 */
   similarityThreshold?: number;
-  /** Name of the Atlas Vector Search index */
-  vectorSearchIndexName?: string;
 }
 
 /**

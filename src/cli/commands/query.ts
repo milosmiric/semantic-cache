@@ -7,7 +7,8 @@
  */
 
 import chalk from "chalk";
-import { SemanticCache, loadConfigFromEnv } from "../../lib";
+import { SemanticCache } from "../../lib";
+import { loadConfigFromEnv, createCacheFromConfig } from "../config";
 
 /**
  * Execute a query through the semantic cache.
@@ -28,7 +29,7 @@ export async function queryCommand(
       config.similarityThreshold = parseFloat(options.threshold);
     }
 
-    cache = SemanticCache.fromConfig(config);
+    cache = createCacheFromConfig(config);
 
     console.log(chalk.gray("\nProcessing query..."));
     console.log(chalk.gray("─".repeat(50)));

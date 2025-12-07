@@ -6,7 +6,8 @@
  */
 
 import chalk from "chalk";
-import { SemanticCache, loadConfigFromEnv } from "../../lib";
+import { SemanticCache } from "../../lib";
+import { loadConfigFromEnv, createCacheFromConfig } from "../config";
 
 /**
  * Clear all cache entries.
@@ -18,7 +19,7 @@ export async function clearCommand(options: { force?: boolean }): Promise<void> 
 
   try {
     const config = loadConfigFromEnv();
-    cache = SemanticCache.fromConfig(config);
+    cache = createCacheFromConfig(config);
 
     // Get current stats before clearing
     const statsBefore = await cache.getStats();

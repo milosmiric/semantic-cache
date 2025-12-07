@@ -6,8 +6,8 @@
  * intelligent query caching based on semantic similarity rather than exact matching.
  *
  * How Semantic Caching Works:
- * 1. When a query arrives, it's converted to a vector embedding using VoyageAI
- * 2. The embedding is compared against cached query embeddings using Atlas Vector Search
+ * 1. When a query arrives, it's converted to a vector embedding
+ * 2. The embedding is compared against cached query embeddings using vector search
  * 3. If a similar query exists above the similarity threshold, the cached response is returned
  * 4. Otherwise, the query is sent to the LLM, and the response is cached for future use
  *
@@ -21,12 +21,27 @@
  * - Lower latency for semantically similar queries
  * - Natural handling of query variations (rephrasing, typos, etc.)
  * - Type-safe structured responses with Zod schemas
+ *
+ * @example
+ * ```typescript
+ * import { SemanticCache, VoyageEmbeddings, MongoDBVectorStore, VercelAILLM } from "@milosmiric/semantic-cache";
+ * import { anthropic } from "@ai-sdk/anthropic";
+ *
+ * const cache = new SemanticCache(
+ *   new VoyageEmbeddings("voyage-api-key"),
+ *   new MongoDBVectorStore({ uri: "mongodb://...", ... }),
+ *   new VercelAILLM(anthropic("claude-sonnet-4-20250514")),
+ *   { similarityThreshold: 0.9 }
+ * );
+ *
+ * const result = await cache.query("What is the capital of France?");
+ * ```
  */
 
 import { createHash } from "crypto";
 import { z } from "zod";
 import type {
-  SemanticCacheConfig,
+  SemanticCacheOptions,
   QueryResult,
   CacheLookupResult,
   CacheStats,
@@ -35,10 +50,6 @@ import type {
   VectorStore,
   QueryOptions,
 } from "../types";
-import type { LanguageModel } from "ai";
-import { VoyageEmbeddings } from "../embeddings/voyage";
-import { MongoDBVectorStore } from "../storage/mongodb";
-import { VercelAILLM } from "../llm/vercel-ai";
 
 /**
  * Compute a hash of a Zod schema for cache differentiation.
@@ -77,92 +88,41 @@ export class SemanticCache {
   /**
    * Creates a new SemanticCache instance with the provided components.
    *
-   * @param embeddings - Embedding provider for vector generation
-   * @param storage - Vector storage backend
-   * @param llm - LLM provider for generating responses (must implement LLMProvider)
-   * @param similarityThreshold - Minimum similarity score for cache hits (0-1)
+   * @param embeddings - Embedding provider for vector generation (e.g., VoyageEmbeddings)
+   * @param storage - Vector storage backend (e.g., MongoDBVectorStore)
+   * @param llm - LLM provider for generating responses (e.g., VercelAILLM)
+   * @param options - Optional cache configuration
+   *
+   * @example
+   * ```typescript
+   * import { SemanticCache, VoyageEmbeddings, MongoDBVectorStore, VercelAILLM } from "@milosmiric/semantic-cache";
+   * import { openai } from "@ai-sdk/openai";
+   *
+   * const cache = new SemanticCache(
+   *   new VoyageEmbeddings("your-voyage-api-key"),
+   *   new MongoDBVectorStore({
+   *     uri: "mongodb+srv://...",
+   *     dbName: "myapp",
+   *     collectionName: "cache",
+   *     embeddingFieldName: "embedding",
+   *     vectorSearchIndexName: "default",
+   *     embeddingDimension: 1024,
+   *   }),
+   *   new VercelAILLM(openai("gpt-5-mini")),
+   *   { similarityThreshold: 0.85 }
+   * );
+   * ```
    */
   constructor(
     embeddings: EmbeddingProvider,
     storage: VectorStore,
     llm: LLMProvider,
-    similarityThreshold: number = 0.85
+    options: SemanticCacheOptions = {}
   ) {
     this.embeddings = embeddings;
     this.storage = storage;
     this.llm = llm;
-    this.similarityThreshold = similarityThreshold;
-  }
-
-  /**
-   * Factory method to create a SemanticCache from configuration.
-   *
-   * This is the recommended way to instantiate the cache for production use.
-   * It handles all component initialization and wiring.
-   *
-   * @param config - Complete configuration object
-   * @param model - Optional Vercel AI SDK LanguageModel. If not provided,
-   *                uses OpenAI with the config's API key and model settings.
-   * @returns Configured SemanticCache instance
-   *
-   * @example
-   * ```typescript
-   * import { openai } from "@ai-sdk/openai";
-   * import { anthropic } from "@ai-sdk/anthropic";
-   *
-   * // Use default OpenAI (requires OPENAI_API_KEY in config)
-   * const cache1 = SemanticCache.fromConfig(config);
-   *
-   * // Use any Vercel AI SDK model
-   * const cache2 = SemanticCache.fromConfig(config, openai("gpt-5-mini"));
-   * const cache3 = SemanticCache.fromConfig(config, anthropic("claude-sonnet-4-20250514"));
-   * ```
-   */
-  static fromConfig(config: SemanticCacheConfig, model?: LanguageModel): SemanticCache {
-    const embeddings = new VoyageEmbeddings(config.voyageApiKey);
-    const storage = new MongoDBVectorStore({
-      uri: config.mongoUri,
-      dbName: config.dbName,
-      collectionName: config.collectionName,
-      embeddingFieldName: config.embeddingsFieldName,
-      vectorSearchIndexName: config.vectorSearchIndexName || "default",
-      embeddingDimension: embeddings.getDimension(),
-    });
-
-    // Use provided model or create default OpenAI model
-    let llm: LLMProvider;
-    if (model) {
-      llm = new VercelAILLM(model);
-    } else {
-      // Lazy import to avoid requiring @ai-sdk/openai if user provides their own model
-      const { createOpenAI } = require("@ai-sdk/openai");
-      const openai = createOpenAI({ apiKey: config.openaiApiKey });
-      llm = new VercelAILLM(openai(config.llmModel || "gpt-5-mini"));
-    }
-
-    return new SemanticCache(embeddings, storage, llm, config.similarityThreshold || 0.85);
-  }
-
-  /**
-   * Create a SemanticCache with a specific Vercel AI SDK model.
-   *
-   * Convenience method for quickly creating a cache with any LLM provider.
-   *
-   * @param config - Configuration object (MongoDB, VoyageAI settings)
-   * @param model - Vercel AI SDK LanguageModel
-   * @returns Configured SemanticCache instance
-   *
-   * @example
-   * ```typescript
-   * import { anthropic } from "@ai-sdk/anthropic";
-   * import { google } from "@ai-sdk/google";
-   *
-   * const cache = SemanticCache.create(config, anthropic("claude-sonnet-4-20250514"));
-   * const cache2 = SemanticCache.create(config, google("gemini-2.0-flash"));
-   * ```
-   */
-  static create(config: SemanticCacheConfig, model: LanguageModel): SemanticCache {
-    return SemanticCache.fromConfig(config, model);
+    this.similarityThreshold = options.similarityThreshold ?? 0.85;
   }
 
   /**

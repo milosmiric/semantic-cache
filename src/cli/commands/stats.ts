@@ -6,7 +6,8 @@
  */
 
 import chalk from "chalk";
-import { SemanticCache, loadConfigFromEnv } from "../../lib";
+import { SemanticCache } from "../../lib";
+import { loadConfigFromEnv, createCacheFromConfig } from "../config";
 
 /**
  * Format bytes to human-readable string.
@@ -35,7 +36,7 @@ export async function statsCommand(): Promise<void> {
 
   try {
     const config = loadConfigFromEnv();
-    cache = SemanticCache.fromConfig(config);
+    cache = createCacheFromConfig(config);
 
     console.log(chalk.cyan.bold("\nSemantic Cache Statistics"));
     console.log(chalk.gray("═".repeat(50)));

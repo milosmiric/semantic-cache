@@ -1,0 +1,11 @@
+{
+  "name": "@milosmiric/semantic-cache",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "^1.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

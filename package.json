@@ -1,7 +1,7 @@
 {
   "name": "@milosmiric/semantic-cache",
   "version": "1.0.0",
-  "description": "Semantic caching for LLM queries using MongoDB Atlas Vector Search and VoyageAI embeddings",
+  "description": "Reduce LLM API costs and latency with semantic caching. Uses pluggable vector stores and embedding providers - includes MongoDB Atlas and VoyageAI implementations",
   "type": "module",
   "main": "./dist/lib/index.mjs",
   "module": "./dist/lib/index.mjs",

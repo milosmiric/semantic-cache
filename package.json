@@ -44,6 +44,7 @@
     "commander": "^14.0.2",
     "langchain": "^1.1.5",
     "mongodb": "^7.0.0",
-    "voyageai": "^0.0.8"
+    "voyageai": "^0.0.8",
+    "zod": "^4.1.13"
   }
 }

@@ -5,6 +5,8 @@
  * ensuring type safety and consistent data structures across all components.
  */
 
+import type { z } from "zod";
+
 /**
  * Configuration options for the semantic cache system.
  */
@@ -30,6 +32,14 @@ export interface SemanticCacheConfig {
 }
 
 /**
+ * Options for query operations.
+ */
+export interface QueryOptions<T extends z.ZodType = z.ZodString> {
+  /** Zod schema for structured output. If omitted, returns raw string. */
+  schema?: T;
+}
+
+/**
  * Represents a single cached query-response pair with its vector embedding.
  */
 export interface CacheEntry {
@@ -37,7 +47,7 @@ export interface CacheEntry {
   _id?: string;
   /** Original user query text */
   query: string;
-  /** LLM-generated response */
+  /** LLM-generated response (string or JSON) */
   response: string;
   /** Vector embedding of the query */
   embedding: number[];
@@ -47,6 +57,8 @@ export interface CacheEntry {
   hitCount: number;
   /** Last time this entry was accessed */
   lastAccessedAt: Date;
+  /** Hash of the schema used (for structured output) */
+  schemaHash?: string;
   /** Additional metadata for the entry */
   metadata?: Record<string, unknown>;
 }
@@ -64,11 +76,11 @@ export interface SimilaritySearchResult {
 /**
  * Result returned from a cache lookup operation.
  */
-export interface CacheLookupResult {
+export interface CacheLookupResult<T = string> {
   /** Whether a cache hit occurred */
   hit: boolean;
   /** The cached response if hit, undefined otherwise */
-  response?: string;
+  response?: T;
   /** Similarity score for cache hits */
   score?: number;
   /** Query used for the lookup */
@@ -79,10 +91,11 @@ export interface CacheLookupResult {
 
 /**
  * Result returned from a query operation (cache hit or LLM call).
+ * Generic type T represents the response type (string or structured object).
  */
-export interface QueryResult {
-  /** The response text */
-  response: string;
+export interface QueryResult<T = string> {
+  /** The response (string or structured object based on schema) */
+  response: T;
   /** Whether response came from cache */
   fromCache: boolean;
   /** Similarity score if from cache */
@@ -139,6 +152,8 @@ export interface EmbeddingProvider {
 export interface LLMProvider {
   /** Generate a completion for the given prompt */
   complete(prompt: string): Promise<string>;
+  /** Generate a structured completion using a Zod schema */
+  completeStructured?<T extends z.ZodType>(prompt: string, schema: T): Promise<z.infer<T>>;
   /** Get the model identifier */
   getModel(): string;
 }
@@ -149,8 +164,12 @@ export interface LLMProvider {
 export interface VectorStore {
   /** Store a cache entry */
   store(entry: Omit<CacheEntry, "_id">): Promise<string>;
-  /** Search for similar entries */
-  searchSimilar(embedding: number[], limit?: number): Promise<SimilaritySearchResult[]>;
+  /** Search for similar entries, optionally filtered by schema hash */
+  searchSimilar(
+    embedding: number[],
+    limit?: number,
+    schemaHash?: string
+  ): Promise<SimilaritySearchResult[]>;
   /** Get cache statistics */
   getStats(): Promise<CacheStats>;
   /** Clear all cache entries */

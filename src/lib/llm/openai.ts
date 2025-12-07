@@ -7,12 +7,14 @@
  *
  * Key features:
  * - LangChain integration for consistent LLM interface
+ * - Structured output support via Zod schemas
  * - Configurable model selection
  * - Timing metrics for performance analysis
  */
 
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
+import type { z } from "zod";
 import type { LLMProvider } from "../types";
 
 /**
@@ -21,6 +23,8 @@ import type { LLMProvider } from "../types";
  * Uses LangChain's ChatOpenAI wrapper to interact with OpenAI's API.
  * This provides a consistent interface and handles retries, rate limiting,
  * and error handling automatically.
+ *
+ * Supports both unstructured (string) and structured (Zod schema) outputs.
  */
 export class OpenAILLM implements LLMProvider {
   private llm: ChatOpenAI;
@@ -36,7 +40,7 @@ export class OpenAILLM implements LLMProvider {
     this.model = model;
     this.llm = new ChatOpenAI({
       openAIApiKey: apiKey,
-      modelName: model
+      modelName: model,
     });
   }
 
@@ -68,6 +72,37 @@ export class OpenAILLM implements LLMProvider {
     }
 
     throw new Error("Unexpected response format from OpenAI");
+  }
+
+  /**
+   * Generate a structured completion using a Zod schema.
+   *
+   * Uses LangChain's withStructuredOutput to ensure the response
+   * matches the provided schema. The LLM is instructed to return
+   * data in the exact format specified.
+   *
+   * @param prompt - User prompt to send to the LLM
+   * @param schema - Zod schema defining the expected output structure
+   * @returns Parsed and validated response matching the schema
+   *
+   * @example
+   * ```typescript
+   * const schema = z.object({
+   *   answer: z.string(),
+   *   confidence: z.number().min(0).max(1),
+   * });
+   *
+   * const result = await llm.completeStructured("What is 2+2?", schema);
+   * // result: { answer: "4", confidence: 0.99 }
+   * ```
+   */
+  async completeStructured<T extends z.ZodType>(
+    prompt: string,
+    schema: T
+  ): Promise<z.infer<T>> {
+    const structuredLLM = this.llm.withStructuredOutput(schema);
+    const response = await structuredLLM.invoke([new HumanMessage(prompt)]);
+    return response as z.infer<T>;
   }
 
   /**

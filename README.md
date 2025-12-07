@@ -130,12 +130,16 @@ bun run cli clear
 bun run cli clear --force
 ```
 
-### Demo Command
+### Demo Commands
 
-Run an interactive demonstration:
+Run interactive demonstrations:
 
 ```bash
+# Basic semantic caching demo
 bun run demo
+
+# Structured output demo with Zod schemas
+bun run cli demo-structured
 ```
 
 ## Library Usage
@@ -167,6 +171,41 @@ console.log(result2.similarityScore);  // 0.94
 // Clean up
 await cache.close();
 ```
+
+### Structured Output with Zod
+
+Get type-safe responses using Zod schemas:
+
+```typescript
+import { SemanticCache, loadConfigFromEnv, z } from "@milosmiric/semantic-cache";
+
+const cache = SemanticCache.fromConfig(loadConfigFromEnv());
+
+// Define a schema for structured responses
+const CapitalSchema = z.object({
+  city: z.string().describe("The capital city name"),
+  country: z.string().describe("The country name"),
+  population: z.number().optional().describe("Population if known"),
+});
+
+// Query with schema - response is typed!
+const result = await cache.query("What is the capital of France?", {
+  schema: CapitalSchema,
+});
+
+// TypeScript knows the shape of result.response
+console.log(result.response.city);       // "Paris"
+console.log(result.response.country);    // "France"
+console.log(result.response.population); // 2161000
+
+// Same query without schema returns string
+const stringResult = await cache.query("What is the capital of France?");
+console.log(stringResult.response); // "The capital of France is Paris..."
+
+await cache.close();
+```
+
+Schema-aware caching ensures that the same query with different schemas creates separate cache entries, preventing type mismatches.
 
 ### Advanced Usage
 

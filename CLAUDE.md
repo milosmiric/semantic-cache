@@ -18,7 +18,8 @@ Query → VoyageAI Embedding → MongoDB Vector Search → Cache Hit? → Return
 - **MongoDB Atlas Vector Search** - Stores embeddings, performs cosine similarity search
 - **VoyageAI** - Generates 1024-dimensional embeddings (voyage-3 model)
 - **OpenAI** - LLM completions for cache misses
-- **LangChain** - OpenAI integration wrapper
+- **LangChain** - OpenAI integration with structured output
+- **Zod** - Schema validation for typed responses
 
 ### Key Components
 
@@ -73,6 +74,7 @@ Required index definition on the collection:
 
 ```bash
 bun run demo                    # Interactive demonstration
+bun run cli demo-structured     # Structured output demo
 bun run cli query "question"    # Query with caching
 bun run cli stats               # Cache statistics
 bun run cli clear               # Clear all cache entries
@@ -80,6 +82,7 @@ bun run cli clear               # Clear all cache entries
 
 ## Library Usage
 
+### String Response (default)
 ```typescript
 import { SemanticCache, loadConfigFromEnv } from "./src/lib";
 
@@ -88,7 +91,25 @@ const result = await cache.query("What is the capital of France?");
 
 console.log(result.response);      // "Paris..."
 console.log(result.fromCache);     // true/false
-console.log(result.similarityScore); // 0.97 (if cache hit)
+
+await cache.close();
+```
+
+### Structured Output with Zod
+```typescript
+import { SemanticCache, loadConfigFromEnv, z } from "./src/lib";
+
+const cache = SemanticCache.fromConfig(loadConfigFromEnv());
+
+const AnswerSchema = z.object({
+  answer: z.string(),
+  confidence: z.number(),
+});
+
+const result = await cache.query("What is 2+2?", { schema: AnswerSchema });
+
+console.log(result.response.answer);     // "4"
+console.log(result.response.confidence); // 0.99
 
 await cache.close();
 ```

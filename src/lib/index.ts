@@ -6,13 +6,13 @@
  * - Atlas Vector Search for similarity matching
  * - VoyageAI for vector embeddings
  * - OpenAI for LLM completions
+ * - Zod for structured output schemas
  *
- * @example
+ * @example String response (default)
  * ```typescript
  * import { SemanticCache, loadConfigFromEnv } from "@milosmiric/semantic-cache";
  *
- * const config = loadConfigFromEnv();
- * const cache = SemanticCache.fromConfig(config);
+ * const cache = SemanticCache.fromConfig(loadConfigFromEnv());
  *
  * const result = await cache.query("What is the capital of France?");
  * console.log(result.response); // "Paris is the capital of France..."
@@ -24,7 +24,32 @@
  *
  * await cache.close();
  * ```
+ *
+ * @example Structured output with Zod
+ * ```typescript
+ * import { SemanticCache, loadConfigFromEnv, z } from "@milosmiric/semantic-cache";
+ *
+ * const cache = SemanticCache.fromConfig(loadConfigFromEnv());
+ *
+ * const CapitalSchema = z.object({
+ *   city: z.string(),
+ *   country: z.string(),
+ *   population: z.number().optional(),
+ * });
+ *
+ * const result = await cache.query("What is the capital of France?", {
+ *   schema: CapitalSchema,
+ * });
+ *
+ * // result.response is typed as { city: string, country: string, population?: number }
+ * console.log(result.response.city); // "Paris"
+ *
+ * await cache.close();
+ * ```
  */
+
+// Re-export Zod for convenience
+export { z } from "zod";
 
 // Core cache implementation
 export { SemanticCache } from "./cache/semantic-cache";
@@ -44,6 +69,7 @@ export type {
   SimilaritySearchResult,
   CacheLookupResult,
   QueryResult,
+  QueryOptions,
   CacheStats,
   EmbeddingOptions,
   EmbeddingProvider,

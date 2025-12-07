@@ -9,6 +9,7 @@
  * Key features:
  * - Native MongoDB driver integration
  * - Atlas Vector Search for similarity queries
+ * - Schema-aware caching (different schemas = different cache entries)
  * - Automatic connection management
  * - Cache statistics and hit tracking
  *
@@ -49,6 +50,7 @@ interface CacheDocument {
   createdAt: Date;
   hitCount: number;
   lastAccessedAt: Date;
+  schemaHash?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -64,7 +66,7 @@ interface CacheDocument {
  *   "fields": [{
  *     "type": "vector",
  *     "path": "embedding",
- *     "numDimensions": 512,
+ *     "numDimensions": 1024,
  *     "similarity": "cosine"
  *   }]
  * }
@@ -99,8 +101,9 @@ export class MongoDBVectorStore implements VectorStore {
     await this.client.connect();
     this.isConnected = true;
 
-    // Ensure index on query field for duplicate checking
+    // Ensure indexes for efficient querying
     await this.collection.createIndex({ query: 1 }, { unique: false });
+    await this.collection.createIndex({ schemaHash: 1 }, { unique: false });
   }
 
   /**
@@ -119,6 +122,7 @@ export class MongoDBVectorStore implements VectorStore {
       createdAt: entry.createdAt,
       hitCount: entry.hitCount,
       lastAccessedAt: entry.lastAccessedAt,
+      schemaHash: entry.schemaHash,
       metadata: entry.metadata,
     };
 
@@ -130,23 +134,31 @@ export class MongoDBVectorStore implements VectorStore {
    * Search for semantically similar cache entries using Atlas Vector Search.
    *
    * Uses the $vectorSearch aggregation stage to perform approximate
-   * nearest neighbor search on the embedding vectors.
+   * nearest neighbor search on the embedding vectors. When a schemaHash
+   * is provided, results are filtered to only include entries with
+   * matching schemas.
    *
    * @param embedding - Query embedding vector
    * @param limit - Maximum number of results to return
+   * @param schemaHash - Optional schema hash to filter results
    * @returns Array of matching entries with similarity scores
    */
-  async searchSimilar(embedding: number[], limit: number = 5): Promise<SimilaritySearchResult[]> {
+  async searchSimilar(
+    embedding: number[],
+    limit: number = 5,
+    schemaHash?: string
+  ): Promise<SimilaritySearchResult[]> {
     await this.connect();
 
-    const pipeline = [
+    // Build the aggregation pipeline
+    const pipeline: object[] = [
       {
         $vectorSearch: {
           index: this.config.vectorSearchIndexName,
           path: this.config.embeddingFieldName,
           queryVector: embedding,
-          numCandidates: limit * 10,
-          limit: limit,
+          numCandidates: limit * 20, // Increase candidates when filtering by schema
+          limit: schemaHash ? limit * 5 : limit, // Fetch more if we'll filter
         },
       },
       {
@@ -158,11 +170,25 @@ export class MongoDBVectorStore implements VectorStore {
           createdAt: 1,
           hitCount: 1,
           lastAccessedAt: 1,
+          schemaHash: 1,
           metadata: 1,
           score: { $meta: "vectorSearchScore" },
         },
       },
     ];
+
+    // Filter by schema hash if provided
+    if (schemaHash !== undefined) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { schemaHash: schemaHash },
+            { schemaHash: { $exists: false } }, // Include entries without schema (backward compat)
+          ],
+        },
+      });
+      pipeline.push({ $limit: limit });
+    }
 
     const results = await this.collection.aggregate(pipeline).toArray();
 
@@ -175,6 +201,7 @@ export class MongoDBVectorStore implements VectorStore {
         createdAt: doc.createdAt,
         hitCount: doc.hitCount,
         lastAccessedAt: doc.lastAccessedAt,
+        schemaHash: doc.schemaHash,
         metadata: doc.metadata,
       },
       score: doc.score as number,

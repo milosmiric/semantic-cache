@@ -89,7 +89,7 @@ In the MongoDB Atlas UI, navigate to your cluster and create a Vector Search Ind
 ```
 
 **Important:**
-- The `numDimensions` must match VoyageAI model output (1024 for `voyage-3`, 512 for `voyage-3-lite`)
+- The `numDimensions` must match VoyageAI model output (1024 for `voyage-3.5`, `voyage-3.5-lite`; 512 for legacy `voyage-3-lite`)
 - The `path` must match `MONGODB_ATLAS_EMBEDDINGS_FIELD_NAME` in your `.env`
 - Index name must match `VECTOR_SEARCH_INDEX_NAME` (default: `default`)
 
@@ -429,7 +429,7 @@ The CLI uses environment variables for configuration. When using the library dir
 
 ## Performance Considerations
 
-- **Embedding Model**: `voyage-3-lite` (512 dims) is faster and cheaper than `voyage-3` (1024 dims)
+- **Embedding Model**: `voyage-3.5-lite` is optimized for latency/cost; `voyage-3.5` offers best quality (both 1024 dims)
 - **Similarity Threshold**: Higher values = fewer false positives, lower values = more cache hits
 - **Index Configuration**: Ensure proper `numCandidates` for accurate results
 

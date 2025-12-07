@@ -11,9 +11,15 @@ import { VoyageEmbeddings } from "../lib/embeddings/voyage";
 
 describe("VoyageEmbeddings", () => {
   describe("constructor", () => {
-    test("should create instance with default model", () => {
+    test("should create instance with default model (voyage-3.5)", () => {
       const embeddings = new VoyageEmbeddings("test-api-key");
-      expect(embeddings.getDimension()).toBe(1024); // voyage-3 default
+      expect(embeddings.getDimension()).toBe(1024);
+      expect(embeddings.getModel()).toBe("voyage-3.5");
+    });
+
+    test("should create instance with voyage-3.5-lite model", () => {
+      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3.5-lite");
+      expect(embeddings.getDimension()).toBe(1024);
     });
 
     test("should create instance with voyage-3-lite model", () => {
@@ -21,26 +27,36 @@ describe("VoyageEmbeddings", () => {
       expect(embeddings.getDimension()).toBe(512);
     });
 
-    test("should create instance with voyage-3 model", () => {
-      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3");
+    test("should create instance with voyage-code-3 model", () => {
+      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-code-3");
       expect(embeddings.getDimension()).toBe(1024);
     });
   });
 
   describe("getDimension", () => {
-    test("should return correct dimension for voyage-3", () => {
-      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3");
+    test("should return correct dimension for voyage-3.5", () => {
+      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3.5");
       expect(embeddings.getDimension()).toBe(1024);
     });
 
-    test("should return correct dimension for voyage-3-lite", () => {
-      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3-lite");
-      expect(embeddings.getDimension()).toBe(512);
+    test("should return correct dimension for voyage-3.5-lite", () => {
+      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3.5-lite");
+      expect(embeddings.getDimension()).toBe(1024);
     });
 
     test("should return correct dimension for voyage-3-large", () => {
       const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3-large");
       expect(embeddings.getDimension()).toBe(1024);
+    });
+
+    test("should return correct dimension for voyage-3-lite (legacy)", () => {
+      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-3-lite");
+      expect(embeddings.getDimension()).toBe(512);
+    });
+
+    test("should return correct dimension for voyage-code-2 (legacy)", () => {
+      const embeddings = new VoyageEmbeddings("test-api-key", "voyage-code-2");
+      expect(embeddings.getDimension()).toBe(1536);
     });
   });
 

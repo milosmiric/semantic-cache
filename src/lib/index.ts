@@ -14,7 +14,7 @@
  * import { openai } from "@ai-sdk/openai";
  *
  * const cache = new SemanticCache(
- *   new VoyageEmbeddings("your-voyage-api-key"),
+ *   new VoyageEmbeddings("your-voyage-api-key"), // Uses voyage-3.5 by default
  *   new MongoDBVectorStore({
  *     uri: process.env.MONGODB_URI!,
  *     dbName: "myapp",

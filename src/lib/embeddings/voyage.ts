@@ -18,19 +18,37 @@ import type { EmbeddingProvider, EmbeddingOptions } from "../types";
 /**
  * Available VoyageAI embedding models and their dimensions.
  *
- * voyage-3-large: 1024 dimensions, best quality
- * voyage-3: 1024 dimensions, balanced
- * voyage-3-lite: 512 dimensions, fastest
+ * Current generation models (recommended):
+ * - voyage-3.5: Latest general-purpose model, 1024 dimensions
+ * - voyage-3.5-lite: Optimized for latency/cost, 1024 dimensions
+ * - voyage-3-large: High quality general-purpose, 1024 dimensions
+ * - voyage-code-3: Code retrieval optimized, 1024 dimensions
+ *
+ * Domain-specific models:
+ * - voyage-finance-2: Finance retrieval, 1024 dimensions
+ * - voyage-law-2: Legal retrieval, 1024 dimensions
+ *
+ * Legacy models (still supported):
+ * - voyage-3, voyage-3-lite, voyage-code-2
  */
 export const VOYAGE_MODELS = {
-  "voyage-3-large": { dimension: 1024, description: "Highest quality, best for complex queries" },
-  "voyage-3": { dimension: 1024, description: "Balanced quality and speed" },
-  "voyage-3-lite": { dimension: 512, description: "Fastest, good for simple queries" },
+  // Current generation
+  "voyage-3.5": { dimension: 1024, description: "Latest general-purpose, best quality" },
+  "voyage-3.5-lite": { dimension: 1024, description: "Optimized for latency and cost" },
+  "voyage-3-large": { dimension: 1024, description: "High quality general-purpose" },
+  "voyage-code-3": { dimension: 1024, description: "Optimized for code retrieval" },
+  // Domain-specific
+  "voyage-finance-2": { dimension: 1024, description: "Finance domain optimized" },
+  "voyage-law-2": { dimension: 1024, description: "Legal domain optimized" },
+  // Legacy (still supported)
+  "voyage-3": { dimension: 1024, description: "Previous generation, balanced" },
+  "voyage-3-lite": { dimension: 512, description: "Previous generation, fast" },
+  "voyage-code-2": { dimension: 1536, description: "Previous code model" },
 } as const;
 
 export type VoyageModel = keyof typeof VOYAGE_MODELS;
 
-const DEFAULT_MODEL: VoyageModel = "voyage-3";
+const DEFAULT_MODEL: VoyageModel = "voyage-3.5";
 
 /**
  * VoyageAI embedding provider implementation.
@@ -47,7 +65,7 @@ export class VoyageEmbeddings implements EmbeddingProvider {
    * Creates a new VoyageAI embeddings instance.
    *
    * @param apiKey - VoyageAI API key
-   * @param model - Model to use for embeddings (default: voyage-3-lite)
+   * @param model - Model to use for embeddings (default: voyage-3.5)
    */
   constructor(apiKey: string, model: VoyageModel = DEFAULT_MODEL) {
     this.client = new VoyageAIClient({ apiKey });

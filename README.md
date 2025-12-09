@@ -49,15 +49,24 @@ Semantic caching improves LLM application performance by caching responses based
 
 ## Installation
 
+Install directly from GitHub:
+
 ```bash
 # Using bun
-bun add @milosmiric/semantic-cache
+bun add github:milosmiric/semantic-cache
 
 # Using npm
-npm install @milosmiric/semantic-cache
+npm install github:milosmiric/semantic-cache
+```
 
-# From GitHub
-bun add github:milosmiric/semantic-cache
+To install a specific version/tag:
+
+```bash
+# Using bun
+bun add github:milosmiric/semantic-cache#v0.1.0
+
+# Using npm
+npm install github:milosmiric/semantic-cache#v0.1.0
 ```
 
 ## CLI Setup
